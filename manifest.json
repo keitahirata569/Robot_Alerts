@@ -1,18 +1,18 @@
 {
   "name": "安田倉庫納品連絡",
-  "short_name": "安田倉庫納品連絡",
-  "start_url": "./index.html",
+  "short_name": "安田倉庫",
+  "start_url": "./",
   "display": "standalone",
-  "background_color": "#f0f2f5",
+  "background_color": "#ffffff",
   "theme_color": "#0078d4",
   "icons": [
     {
-      "src": "./icon.png",
+      "src": "icon.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "./icon.png",
+      "src": "icon.png",
       "sizes": "512x512",
       "type": "image/png"
     }
