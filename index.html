@@ -8,61 +8,46 @@
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
-  /* 全体の背景と配置（お手本準拠） */
   body {
     font-family: sans-serif;
-    margin: 0;
-    padding: 20px 16px; /* 画面外側の余白 */
+    padding: 16px;
     background: #f0f2f5;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
   }
 
-  /* カードデザイン（2026-04-30_15h53_06.png の再現） */
   .card {
     background: white;
     border-radius: 18px;
-    padding: 40px 24px; /* 上下の余白を広げ、左右を調整 */
+    padding: 20px;
     box-shadow: 0 6px 16px rgba(0,0,0,0.1);
-    width: 100%;
-    max-width: 400px;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    min-height: 200px;
   }
 
-  /* ヘッダー周り（お手本コードと画像のバランス） */
   h2 {
     text-align: center;
     font-size: 26px;
-    margin: 0 0 8px 0; /* 下のみにマージン */
-    font-weight: bold;
-    color: #000;
+    margin-bottom: 8px;
   }
 
   .sub {
     text-align: center;
     font-size: 14px;
     color: #666;
-    margin-bottom: 30px; /* ボタンまでの距離を画像に合わせる */
+    margin-bottom: 20px;
   }
 
-  /* ボタン：お手本コード数値を厳守 */
   button {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
+
     width: 100%;
-    padding: 18px; /* お手本コード 18px */
-    margin: 6px 0;  /* ボタン間の詰まり具合を調整 */
+    padding: 18px;
+    margin: 10px 0;
     font-size: 18px;
-    font-weight: bold;
     border: none;
     border-radius: 12px;
     color: white;
+
     transition: all 0.15s ease;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     cursor: pointer;
@@ -84,12 +69,8 @@
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
   }
 
-  /* リスト部分：カード内で浮かないよう調整 */
   .list {
     margin-top: 15px;
-    max-height: 300px; /* 長くなった場合に備えて */
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
   }
 
   .item {
@@ -100,13 +81,10 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border: 1px solid #eee;
   }
 
   .item span {
     font-size: 16px;
-    font-weight: bold;
-    color: #333;
   }
 
   .delete {
@@ -118,7 +96,7 @@
     box-shadow: none;
   }
 
-  /* カメラ用モーダル（全画面） */
+  /* カメラモーダル */
   #scanner-overlay {
     display: none;
     position: fixed;
@@ -184,6 +162,7 @@ function startScan() {
   document.getElementById("scanner-overlay").style.display = "flex";
   if (scanner) return;
   scanner = new Html5Qrcode("reader");
+
   scanner.start(
     { facingMode: "environment" },
     { fps: 10, qrbox: { width: 250, height: 250 } },
@@ -220,6 +199,7 @@ function stopScan() {
 function renderList() {
   const list = document.getElementById("list");
   list.innerHTML = "";
+
   results.forEach((text, index) => {
     const div = document.createElement("div");
     div.className = "item";
@@ -241,11 +221,19 @@ function sendMail() {
     alert("製番がありません");
     return;
   }
-  if (!confirm("メールを作成しますか？")) return;
+
+  if (!confirm("安田倉庫へ納品連絡メールを作成しますか？")) return;
 
   let listText = results.map((r, i) => (i + 1) + ". " + r).join("\n");
-  let body = `お疲れ様です\n下記製番を安田倉庫へ納品しました。\n\n${listText}\n\n以上、宜しくお願いいたします。`;
-  
+
+  let body =
+`お疲れ様です
+下記製番を安田倉庫へ納品しました。
+
+${listText}
+
+以上、宜しくお願いいたします。`;
+
   let to = "ki-hirata@toyodensei.co.jp";
   let cc = "ki-hirata@toyodensei.co.jp";
   let subject = "安田倉庫納品連絡";
