@@ -4,7 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>納品連絡</title>
+  <title>安田倉庫納品連絡</title>
+
+  <link rel="icon" href="./favicon.ico">
+  <link rel="apple-touch-icon" href="./icon.png">
 
   <script src="https://unpkg.com/html5-qrcode"></script>
 
@@ -45,6 +48,10 @@
     }
 
     button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
       width: 100%;
       padding: 18px;
       margin: 10px 0;
@@ -55,6 +62,12 @@
       cursor: pointer;
     }
 
+    button img {
+      width: 24px;
+      height: 24px;
+      filter: brightness(0) invert(1);
+    }
+
     .blue { background: #0078d4; }
     .red { background: #d9534f; }
     .orange { background: #f39c12; }
@@ -63,6 +76,7 @@
       flex: 1;
       overflow-y: auto;
       margin-top: 15px;
+      -webkit-overflow-scrolling: touch;
     }
 
     /* ===== リスト ===== */
@@ -70,7 +84,7 @@
     .item {
       background: #f8f9fa;
       padding: 14px;
-      padding-right: 95px;        /* ← 削除ボタン分の余白 */
+      padding-right: 95px;
       border-radius: 10px;
       margin-bottom: 10px;
       position: relative;
@@ -88,11 +102,9 @@
       right: 12px;
       top: 50%;
       transform: translateY(-50%);
-
-      width: 25%;               /* ← 4分の1 */
+      width: 25%;
       max-width: 80px;
       height: 36px;
-
       background: #d9534f;
       color: white;
       font-size: 13px;
@@ -151,28 +163,36 @@
 </head>
 
 <body>
-<div class="card">
-  <h2>安田倉庫納品連絡</h2>
-  <div class="sub">
-    製番QRを読み取りメール送信してください<br>（複数可）
+  <div class="card">
+    <h2>安田倉庫納品連絡</h2>
+    <div class="sub">
+      製番QRを読み取りメール送信してください<br>（複数可）
+    </div>
+
+    <button class="blue" onclick="startScan()">
+      <img src="camera.png" alt=""> 製番を読み取る
+    </button>
+
+    <button class="red" onclick="sendMail()">
+      <img src="mail.png" alt=""> メール送信
+    </button>
+
+    <button class="orange" onclick="location.reload()">
+      <img src="refresh.png" alt=""> リセット
+    </button>
+
+    <div class="list" id="list"></div>
   </div>
 
-  <button class="blue" onclick="startScan()">製番を読み取る</button>
-  <button class="red" onclick="sendMail()">メール送信</button>
-  <button class="orange" onclick="location.reload()">リセット</button>
-
-  <div class="list" id="list"></div>
-</div>
-
-<div id="scanner-overlay">
-  <div id="reader-container">
-    <div id="reader"></div>
-    <div id="qr-highlight"></div>
+  <div id="scanner-overlay">
+    <div id="reader-container">
+      <div id="reader"></div>
+      <div id="qr-highlight"></div>
+    </div>
+    <div class="cancel-area">
+      <button class="red" onclick="stopScan()">閉じる</button>
+    </div>
   </div>
-  <div class="cancel-area">
-    <button class="red" onclick="stopScan()">閉じる</button>
-  </div>
-</div>
 
 <script>
   let scanner = null;
@@ -187,24 +207,30 @@
     scanner.start(
       { facingMode: "environment" },
       { fps: 10, qrbox: 250 },
-      text => {
-        if (lock) return;
-        lock = true;
-
-        if (!results.includes(text)) {
-          results.push(text);
-          renderList();
-          playBeep();
-          highlight();
-        }
-
-        setTimeout(() => lock = false, 800);
-      }
+      onScanSuccess
     );
   }
 
+  function onScanSuccess(text) {
+    if (lock) return;
+    lock = true;
+
+    if (!results.includes(text)) {
+      results.push(text);
+      renderList();
+      playBeep();
+      highlightQr();
+      if (navigator.vibrate) navigator.vibrate(100);
+    }
+
+    setTimeout(() => lock = false, 800);
+  }
+
   function stopScan() {
-    if (!scanner) return;
+    if (!scanner) {
+      document.getElementById("scanner-overlay").style.display = "none";
+      return;
+    }
     scanner.stop().then(() => {
       scanner.clear();
       scanner = null;
@@ -231,7 +257,11 @@
   }
 
   function sendMail() {
-    if (!results.length) return alert("製番がありません");
+    if (!results.length) {
+      alert("製番がありません");
+      return;
+    }
+
     const body =
 `お疲れ様です
 下記製番を安田倉庫へ納品しました。
@@ -247,7 +277,7 @@ ${results.map((r,i)=>`${i+1}. ${r}`).join("\n")}
   }
 
   function playBeep() {
-    const ctx = new (AudioContext || webkitAudioContext)();
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const osc = ctx.createOscillator();
     osc.frequency.value = 1000;
     osc.connect(ctx.destination);
@@ -255,7 +285,7 @@ ${results.map((r,i)=>`${i+1}. ${r}`).join("\n")}
     osc.stop(ctx.currentTime + 0.15);
   }
 
-  function highlight() {
+  function highlightQr() {
     const box = document.getElementById("qr-highlight");
     box.classList.add("active");
     setTimeout(() => box.classList.remove("active"), 500);
