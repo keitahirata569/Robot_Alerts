@@ -8,69 +8,64 @@
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
-  /* お手本のbodyスタイルを継承 */
-  html, body {
-    height: 100%;
-    margin: 0;
-    overflow: hidden; /* 画面全体のスクロールを禁止 */
-  }
-
+  /* 全体の背景と配置（お手本準拠） */
   body {
     font-family: sans-serif;
-    padding: 16px;
+    margin: 0;
+    padding: 20px 16px; /* 画面外側の余白 */
     background: #f0f2f5;
     display: flex;
     justify-content: center;
-    box-sizing: border-box;
+    align-items: flex-start;
   }
 
-  /* お手本のカードスタイル */
+  /* カードデザイン（2026-04-30_15h53_06.png の再現） */
   .card {
     background: white;
     border-radius: 18px;
-    padding: 20px;
+    padding: 40px 24px; /* 上下の余白を広げ、左右を調整 */
     box-shadow: 0 6px 16px rgba(0,0,0,0.1);
-    display: flex;
-    flex-direction: column;
     width: 100%;
     max-width: 400px;
-    height: auto;
-    max-height: 95vh; /* 画面内に収める */
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    min-height: 200px;
   }
 
-  /* お手本の見出しスタイル */
+  /* ヘッダー周り（お手本コードと画像のバランス） */
   h2 {
     text-align: center;
     font-size: 26px;
-    margin-bottom: 8px;
-    margin-top: 0;
+    margin: 0 0 8px 0; /* 下のみにマージン */
+    font-weight: bold;
+    color: #000;
   }
 
   .sub {
     text-align: center;
     font-size: 14px;
     color: #666;
-    margin-bottom: 20px;
+    margin-bottom: 30px; /* ボタンまでの距離を画像に合わせる */
   }
 
-  /* お手本のボタンスタイルを完全再現 */
+  /* ボタン：お手本コード数値を厳守 */
   button {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
     width: 100%;
-    padding: 18px; /* お手本通り */
-    margin: 10px 0;
+    padding: 18px; /* お手本コード 18px */
+    margin: 6px 0;  /* ボタン間の詰まり具合を調整 */
     font-size: 18px;
+    font-weight: bold;
     border: none;
     border-radius: 12px;
     color: white;
     transition: all 0.15s ease;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     cursor: pointer;
-    font-weight: bold; /* 画像に合わせ太字に */
   }
 
   button img {
@@ -89,12 +84,11 @@
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
   }
 
-  /* リスト部分の調整（お手本のトーンに合わせる） */
+  /* リスト部分：カード内で浮かないよう調整 */
   .list {
-    margin-top: 10px;
+    margin-top: 15px;
+    max-height: 300px; /* 長くなった場合に備えて */
     overflow-y: auto;
-    flex-grow: 1;
-    padding-right: 2px;
     -webkit-overflow-scrolling: touch;
   }
 
@@ -116,7 +110,7 @@
   }
 
   .delete {
-    background: #666; /* 削除は少し控えめなグレーに */
+    background: #d9534f;
     padding: 8px 12px;
     font-size: 13px;
     width: auto;
@@ -124,7 +118,7 @@
     box-shadow: none;
   }
 
-  /* カメラモーダル */
+  /* カメラ用モーダル（全画面） */
   #scanner-overlay {
     display: none;
     position: fixed;
@@ -132,7 +126,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.85);
+    background: rgba(0, 0, 0, 0.9);
     z-index: 1000;
     flex-direction: column;
     justify-content: center;
@@ -141,7 +135,7 @@
 
   #reader {
     width: 90%;
-    max-width: 350px;
+    max-width: 400px;
     background: white;
     border-radius: 18px;
     overflow: hidden;
@@ -157,22 +151,20 @@
 <body>
 
 <div class="card">
-  <div class="fixed-header">
-    <h2>安田倉庫納品連絡</h2>
-    <div class="sub">製番QRを読み取りメール送信してください(複数可)</div>
+  <h2>安田倉庫納品連絡</h2>
+  <div class="sub">製番QRを読み取りメール送信してください(複数可)</div>
 
-    <button class="blue" onclick="startScan()">
-      <img src="camera.png"> 製番を読み取る
-    </button>
+  <button class="blue" onclick="startScan()">
+    <img src="camera.png"> 製番を読み取る
+  </button>
 
-    <button class="red" onclick="sendMail()">
-      <img src="mail.png"> メール送信
-    </button>
+  <button class="red" onclick="sendMail()">
+    <img src="mail.png"> メール送信
+  </button>
 
-    <button class="orange" onclick="location.reload()">
-      <img src="refresh.png"> リセット
-    </button>
-  </div>
+  <button class="orange" onclick="location.reload()">
+    <img src="refresh.png"> リセット
+  </button>
 
   <div class="list" id="list"></div>
 </div>
@@ -237,7 +229,6 @@ function renderList() {
     `;
     list.appendChild(div);
   });
-  list.scrollTop = list.scrollHeight;
 }
 
 function deleteItem(index) {
@@ -253,7 +244,7 @@ function sendMail() {
   if (!confirm("メールを作成しますか？")) return;
 
   let listText = results.map((r, i) => (i + 1) + ". " + r).join("\n");
-  let body = `お疲れ様です\n下記製番を安田倉庫へ納品しました。\n\n${listText}\n\n以上、宜しくお願いいたします。\n※本メールアドレスに返信いただいても対応できませんので、ご了承ください。`;
+  let body = `お疲れ様です\n下記製番を安田倉庫へ納品しました。\n\n${listText}\n\n以上、宜しくお願いいたします。`;
   
   let to = "ki-hirata@toyodensei.co.jp";
   let cc = "ki-hirata@toyodensei.co.jp";
