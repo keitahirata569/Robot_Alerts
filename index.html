@@ -2,30 +2,50 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>製番スキャン</title>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
+  /* 全体の高さを画面にフィットさせ、はみ出しを防ぐ */
+  html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+  }
+
   body {
     font-family: sans-serif;
     padding: 16px;
     background: #f0f2f5;
-    margin: 0;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
   }
 
+  /* カードも画面の高さに合わせて伸縮するように設定 */
   .card {
     background: white;
     border-radius: 18px;
     padding: 20px;
     box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    max-height: 100%; /* 画面からはみ出さない */
+    box-sizing: border-box;
+  }
+
+  /* ヘッダーとボタン部分は固定 */
+  .fixed-header {
+    flex-shrink: 0;
   }
 
   h2 {
     text-align: center;
     font-size: 26px;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
+    margin-top: 0;
   }
 
   .sub {
@@ -68,48 +88,14 @@
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
   }
 
-  /* --- スキャン用ポップアップ（モーダル） --- */
-  #scanner-overlay {
-    display: none; /* 初期状態は非表示 */
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.8); /* 背景をうす暗く */
-    z-index: 1000;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-  }
-
-  #reader {
-    width: 90%;
-    max-width: 400px;
-    background: white;
-    border-radius: 12px;
-    overflow: hidden;
-  }
-
-  /* 下部固定のキャンセルボタン */
-  .cancel-area {
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    padding: 20px;
-    box-sizing: border-box;
-  }
-
-  .cancel-btn {
-    background: #555;
-    margin: 0;
-    font-weight: bold;
-  }
-
-  /* リスト表示 */
+  /* --- ここが重要：リスト部分だけをスクロールさせる --- */
   .list {
-    margin-top: 20px;
+    margin-top: 10px;
     text-align: left;
+    overflow-y: auto; /* 縦方向にスクロール */
+    flex-grow: 1;    /* 余ったスペースをすべてリストが使う */
+    padding-right: 4px; /* スクロールバーとの重なり防止 */
+    -webkit-overflow-scrolling: touch; /* iOSのスクロールを滑らかに */
   }
 
   .item {
@@ -142,6 +128,38 @@
     font-size: 14px;
     box-shadow: none;
     margin: 0;
+    height: auto;
+  }
+
+  /* カメラ用モーダル（前回のまま） */
+  #scanner-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
+  #reader {
+    width: 90%;
+    max-width: 400px;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .cancel-area {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    padding: 20px;
+    box-sizing: border-box;
   }
 </style>
 </head>
@@ -149,29 +167,32 @@
 <body>
 
 <div class="card">
-  <h2>製番読み取り</h2>
-  <div class="sub">製番QRを読み取り(複数可)メール送信してください</div>
+  <!-- 固定ヘッダー部分 -->
+  <div class="fixed-header">
+    <h2>製番読み取り</h2>
+    <div class="sub">製番QRを読み取り(複数可)メール送信してください</div>
 
-  <button class="blue" onclick="startScan()">
-    <img src="camera.png"> 製番を読み取る
-  </button>
+    <button class="blue" onclick="startScan()">
+      <img src="camera.png"> 製番を読み取る
+    </button>
 
-  <button class="red" onclick="sendMail()">
-    <img src="mail.png"> メール送信
-  </button>
+    <button class="red" onclick="sendMail()">
+      <img src="mail.png"> メール送信
+    </button>
 
-  <button class="orange" onclick="location.reload()">
-    <img src="refresh.png"> リセット
-  </button>
+    <button class="orange" onclick="location.reload()">
+      <img src="refresh.png"> リセット
+    </button>
+  </div>
 
+  <!-- スクロールするリスト部分 -->
   <div class="list" id="list"></div>
 </div>
 
-<!-- カメラポップアップ構造 -->
 <div id="scanner-overlay">
   <div id="reader"></div>
   <div class="cancel-area">
-    <button class="cancel-btn" onclick="stopScan()">CANCEL / 閉じる</button>
+    <button class="red" onclick="stopScan()">CANCEL / 閉じる</button>
   </div>
 </div>
 
@@ -180,23 +201,19 @@ let scanner = null;
 let results = [];
 
 function startScan() {
-  const overlay = document.getElementById("scanner-overlay");
-  overlay.style.display = "flex"; // ポップアップを表示
-
+  document.getElementById("scanner-overlay").style.display = "flex";
   if (scanner) return;
   scanner = new Html5Qrcode("reader");
-
   scanner.start(
     { facingMode: "environment" },
     { fps: 10, qrbox: { width: 250, height: 250 } },
     (decodedText) => {
-      // 成功時
       if (!results.includes(decodedText)) {
         results.push(decodedText);
         renderList();
       }
       if (navigator.vibrate) navigator.vibrate(100);
-      stopScan(); // 読み取ったら自動で閉じる
+      stopScan();
     }
   ).catch(err => {
     alert("カメラ起動失敗: " + err);
@@ -204,7 +221,6 @@ function startScan() {
   });
 }
 
-// スキャン停止とポップアップ非表示
 function stopScan() {
   const overlay = document.getElementById("scanner-overlay");
   if (scanner) {
@@ -233,6 +249,8 @@ function renderList() {
     `;
     list.appendChild(div);
   });
+  // 新しいアイテムが追加されたら一番下まで自動スクロール
+  list.scrollTop = list.scrollHeight;
 }
 
 function deleteItem(index) {
