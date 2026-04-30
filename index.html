@@ -69,6 +69,7 @@ button {
 <h2>製番読み取り</h2>
 
 <button class="blue" onclick="startScan()">📷 製番を読み取る</button>
+<button class="red" onclick="sendMail()">📧 メール送信</button>
 <button class="orange" onclick="location.reload()">🔄 リセット</button>
 
 <div id="reader"></div>
@@ -131,6 +132,43 @@ function deleteItem(index) {
   if (!confirm("削除しますか？")) return;
   results.splice(index, 1);
   renderList();
+}
+
+function sendMail() {
+  if (results.length === 0) {
+    alert("製番がありません");
+    return;
+  }
+
+  if (!confirm("メールを作成しますか？")) return;
+
+  let listText = results.map((r, i) => (i + 1) + ". " + r).join("\n");
+
+  let body =
+`お疲れ様です
+下記製番を安田倉庫へ納品しました。
+
+${listText}
+
+以上、宜しくお願いいたします。
+※本メールアドレスご返信いただいても対応できませんので、ご了承ください。`;
+
+  let to = "ki-hirata@toyodensei.co.jp";
+  let cc = "ki-hirata@toyodensei.co.jp";
+  let subject = "安田倉庫納品連絡";
+
+  let url = "mailto:" + to +
+    "?cc=" + encodeURIComponent(cc) +
+    "&subject=" + encodeURIComponent(subject) +
+    "&body=" + encodeURIComponent(body);
+
+  // メール起動
+  location.href = url;
+
+  // 送信後リセット（少し遅らせるのがポイント）
+  setTimeout(() => {
+    location.reload();
+  }, 500);
 }
 </script>
 
