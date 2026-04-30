@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>製番スキャン</title>
+
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<style>
+body {
+  font-family: sans-serif;
+  text-align: center;
+  padding: 16px;
+  background: #f0f2f5;
+}
+
+h2 {
+  margin-bottom: 10px;
+}
+
+button {
+  width: 100%;
+  padding: 16px;
+  margin: 8px 0;
+  font-size: 18px;
+  border: none;
+  border-radius: 12px;
+  color: white;
+}
+
+.blue { background: #0078d4; }
+.orange { background: #f39c12; }
+.red { background: #d9534f; }
+
+#reader {
+  width: 300px;
+  margin: 10px auto;
+}
+
+.list {
+  margin-top: 20px;
+  text-align: left;
+}
+
+.item {
+  background: white;
+  padding: 12px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.delete {
+  background: #d9534f;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+</style>
+</head>
+
+<body>
+
+<h2>製番読み取り</h2>
+
+<button class="blue" onclick="startScan()">📷 製番を読み取る</button>
+<button class="orange" onclick="location.reload()">🔄 リセット</button>
+
+<div id="reader"></div>
+
+<div class="list" id="list"></div>
+
+<script>
+let scanner = null;
+let results = [];
+
+function startScan() {
+  if (scanner) return;
+
+  scanner = new Html5Qrcode("reader");
+
+  scanner.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: 250 },
+    (decodedText) => {
+
+      // 読み取ったら停止
+      scanner.stop().then(() => {
+        scanner.clear();
+        scanner = null;
+      });
+
+      // 重複防止
+      if (!results.includes(decodedText)) {
+        results.push(decodedText);
+        renderList();
+      }
+
+      // バイブ
+      if (navigator.vibrate) navigator.vibrate(100);
+    }
+  ).catch(err => {
+    alert("カメラ起動失敗: " + err);
+    scanner = null;
+  });
+}
+
+function renderList() {
+  const list = document.getElementById("list");
+  list.innerHTML = "";
+
+  results.forEach((text, index) => {
+    const div = document.createElement("div");
+    div.className = "item";
+
+    div.innerHTML = `
+      <span>${index + 1}. ${text}</span>
+      <button class="delete" onclick="deleteItem(${index})">削除</button>
+    `;
+
+    list.appendChild(div);
+  });
+}
+
+function deleteItem(index) {
+  if (!confirm("削除しますか？")) return;
+  results.splice(index, 1);
+  renderList();
+}
+</script>
+
+</body>
+</html>
