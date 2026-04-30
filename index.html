@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -15,14 +16,13 @@
     html, body {
       height: 100%;
       margin: 0;
-      overflow: hidden;
       font-family: sans-serif;
       background: #f0f2f5;
     }
 
     body {
       padding: 16px;
-      box-sizing: border-box; /* ★追加 */
+      box-sizing: border-box;
     }
 
     .card {
@@ -32,7 +32,6 @@
       box-shadow: 0 6px 16px rgba(0,0,0,0.1);
       display: flex;
       flex-direction: column;
-      height: calc(100vh - 32px); /* ★ここだけ変更 */
     }
 
     h2 {
@@ -74,13 +73,8 @@
     .orange { background: #f39c12; }
 
     .list {
-      flex: 1;
-      overflow-y: auto;
       margin-top: 15px;
-      -webkit-overflow-scrolling: touch;
     }
-
-    /* ===== リスト ===== */
 
     .item {
       background: #f8f9fa;
@@ -150,8 +144,12 @@
       pointer-events: none;
     }
 
-    #qr-highlight.active {
+    #qr-highlight.yellow {
       border-color: #ffd500;
+    }
+
+    #qr-highlight.red {
+      border-color: #ff3b30;
     }
 
     .cancel-area {
@@ -217,11 +215,20 @@
     lock = true;
 
     if (!results.includes(text)) {
+      // 新規
       results.push(text);
       renderList();
-      playBeep();
-      highlightQr();
+      playBeep(1);
+      highlightQr("yellow");
+
       if (navigator.vibrate) navigator.vibrate(100);
+
+    } else {
+      // 重複
+      playBeep(2);
+      highlightQr("red");
+
+      if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
     }
 
     setTimeout(() => lock = false, 800);
@@ -277,20 +284,36 @@ ${results.map((r,i)=>`${i+1}. ${r}`).join("\n")}
       "&body=" + encodeURIComponent(body);
   }
 
-  function playBeep() {
+  function playBeep(count = 1) {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    osc.frequency.value = 1000;
-    osc.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.15);
+
+    for (let i = 0; i < count; i++) {
+      const osc = ctx.createOscillator();
+      osc.frequency.value = 1000;
+      osc.connect(ctx.destination);
+
+      const start = ctx.currentTime + i * 0.2;
+      osc.start(start);
+      osc.stop(start + 0.1);
+    }
   }
 
-  function highlightQr() {
+  function highlightQr(color) {
     const box = document.getElementById("qr-highlight");
-    box.classList.add("active");
-    setTimeout(() => box.classList.remove("active"), 500);
+
+    box.classList.remove("yellow", "red");
+
+    if (color === "red") {
+      box.classList.add("red");
+    } else {
+      box.classList.add("yellow");
+    }
+
+    setTimeout(() => {
+      box.classList.remove("yellow", "red");
+    }, 500);
   }
 </script>
 </body>
 </html>
+```
