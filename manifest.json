@@ -1,7 +1,7 @@
 
 {
-  "name": "安田倉庫納品連絡",
-  "short_name": "安田倉庫",
+  "name": "納品連絡",
+  "short_name": "納品連絡",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#ffffff",
