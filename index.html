@@ -19,6 +19,11 @@
     border-radius: 18px;
     padding: 20px;
     box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+
+    /* ★追加 */
+    display: flex;
+    flex-direction: column;
+    height: 90vh;
   }
 
   h2 {
@@ -71,6 +76,10 @@
 
   .list {
     margin-top: 15px;
+
+    /* ★追加（ここだけスクロール） */
+    overflow-y: auto;
+    flex: 1;
   }
 
   .item {
@@ -228,7 +237,7 @@ function sendMail() {
 
   let body =
 `お疲れ様です
-下記製番を安田倉庫へ納品しました。
+下記の製番を安田倉庫へ納品しました。
 
 ${listText}
 
