@@ -2,36 +2,42 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>安田倉庫納品連絡</title>
 
-  <!-- ★追加（favicon） -->
-  <link rel="icon" href="./favicon.ico" type="image/x-icon">
+  <link rel="icon" href="./favicon.ico">
   <link rel="apple-touch-icon" href="./icon.png">
 
   <script src="https://unpkg.com/html5-qrcode"></script>
 
   <style>
-    body {
+    html, body {
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
       font-family: sans-serif;
-      padding: 16px;
       background: #f0f2f5;
     }
 
+    body {
+      padding: 16px;
+    }
+
     .card {
-      background: white;
+      background: #fff;
       border-radius: 18px;
       padding: 20px;
       box-shadow: 0 6px 16px rgba(0,0,0,0.1);
       display: flex;
       flex-direction: column;
-      height: 90vh;
+      height: 100%;
     }
 
     h2 {
       text-align: center;
       font-size: 26px;
-      margin-bottom: 8px;
+      margin: 0 0 8px;
     }
 
     .sub {
@@ -42,19 +48,17 @@
     }
 
     button {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
       width: 100%;
       padding: 18px;
       margin: 10px 0;
       font-size: 18px;
       border: none;
       border-radius: 12px;
-      color: white;
-      transition: all 0.15s ease;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
       cursor: pointer;
     }
 
@@ -65,19 +69,14 @@
     }
 
     .blue { background: #0078d4; }
-    .orange { background: #f39c12; }
     .red { background: #d9534f; }
-
-    button:active {
-      transform: translateY(2px);
-      filter: brightness(0.9);
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    }
+    .orange { background: #f39c12; }
 
     .list {
-      margin-top: 15px;
-      overflow-y: auto;
       flex: 1;
+      overflow-y: auto;
+      margin-top: 15px;
+      -webkit-overflow-scrolling: touch;
     }
 
     .item {
@@ -90,39 +89,53 @@
       align-items: center;
     }
 
-    .item span {
-      font-size: 16px;
-    }
-
     .delete {
       background: #d9534f;
       padding: 8px 12px;
       font-size: 13px;
-      width: auto;
-      margin: 0;
-      box-shadow: none;
+      border-radius: 8px;
+      color: #fff;
+      border: none;
     }
+
+    /* ==== Scanner ==== */
 
     #scanner-overlay {
       display: none;
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.9);
+      inset: 0;
+      background: rgba(0,0,0,0.9);
       z-index: 1000;
+      display: flex;
       flex-direction: column;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
+    }
+
+    #reader-container {
+      position: relative;
+      width: 260px;
+      height: 260px;
+      background: #fff;
+      border-radius: 16px;
+      overflow: hidden;
     }
 
     #reader {
-      width: 90%;
-      max-width: 400px;
-      background: white;
-      border-radius: 18px;
-      overflow: hidden;
+      width: 100%;
+      height: 100%;
+    }
+
+    #qr-highlight {
+      position: absolute;
+      inset: 5px;
+      border: 4px solid #fff;
+      box-sizing: border-box;
+      pointer-events: none;
+    }
+
+    #qr-highlight.active {
+      border-color: #ffd500;
     }
 
     .cancel-area {
@@ -133,120 +146,125 @@
 </head>
 
 <body>
-  <div class="card">
-    <h2>安田倉庫納品連絡</h2>
-    <div class="sub">製番QRを読み取りメール送信してください(複数可)</div>
+<div class="card">
+  <h2>安田倉庫納品連絡</h2>
+  <div class="sub">製番QRを読み取りメール送信してください<br>（連続読み取り可）</div>
 
-    <button class="blue" onclick="startScan()">
-      <img src="camera.png"> 製番を読み取る
-    </button>
+  <button class="blue" onclick="startScan()">
+    <img src="camera.png"> 製番を読み取る
+  </button>
 
-    <button class="red" onclick="sendMail()">
-      <img src="mail.png"> メール送信
-    </button>
+  <button class="red" onclick="sendMail()">
+    <img src="mail.png"> メール送信
+  </button>
 
-    <button class="orange" onclick="location.reload()">
-      <img src="refresh.png"> リセット
-    </button>
+  <button class="orange" onclick="location.reload()">
+    <img src="refresh.png"> リセット
+  </button>
 
-    <div class="list" id="list"></div>
-  </div>
+  <div class="list" id="list"></div>
+</div>
 
-  <div id="scanner-overlay">
+<div id="scanner-overlay">
+  <div id="reader-container">
     <div id="reader"></div>
-    <div class="cancel-area">
-      <button class="red" onclick="stopScan()">閉じる</button>
-    </div>
+    <div id="qr-highlight"></div>
   </div>
+  <div class="cancel-area">
+    <button class="red" onclick="stopScan()">閉じる</button>
+  </div>
+</div>
 
-  <script>
-    let scanner = null;
-    let results = [];
+<script>
+  let scanner = null;
+  let results = [];
+  let scanLock = false;
 
-    function startScan() {
-      document.getElementById("scanner-overlay").style.display = "flex";
-      if (scanner) return;
-      scanner = new Html5Qrcode("reader");
+  function startScan() {
+    document.getElementById("scanner-overlay").style.display = "flex";
+    if (scanner) return;
 
-      scanner.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        (decodedText) => {
-          if (!results.includes(decodedText)) {
-            results.push(decodedText);
-            renderList();
-          }
-          if (navigator.vibrate) navigator.vibrate(100);
-          stopScan();
-        }
-      ).catch(err => {
-        alert("カメラ起動失敗: " + err);
-        stopScan();
-      });
-    }
+    scanner = new Html5Qrcode("reader");
+    scanner.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: 250 },
+      onScanSuccess
+    );
+  }
 
-    function stopScan() {
-      const overlay = document.getElementById("scanner-overlay");
-      if (scanner) {
-        scanner.stop().then(() => {
-          scanner.clear();
-          scanner = null;
-          overlay.style.display = "none";
-        }).catch(() => {
-          scanner = null;
-          overlay.style.display = "none";
-        });
-      } else {
-        overlay.style.display = "none";
-      }
-    }
+  function onScanSuccess(text) {
+    if (scanLock) return;
+    scanLock = true;
 
-    function renderList() {
-      const list = document.getElementById("list");
-      list.innerHTML = "";
-
-      results.forEach((text, index) => {
-        const div = document.createElement("div");
-        div.className = "item";
-        div.innerHTML = `
-          <span>${index + 1}. ${text}</span>
-          <button class="delete" onclick="deleteItem(${index})">削除</button>
-        `;
-        list.appendChild(div);
-      });
-    }
-
-    function deleteItem(index) {
-      results.splice(index, 1);
+    if (!results.includes(text)) {
+      results.push(text);
       renderList();
+      playBeep();
+      highlightQr();
+      if (navigator.vibrate) navigator.vibrate(100);
     }
 
-    function sendMail() {
-      if (results.length === 0) {
-        alert("製番がありません");
-        return;
-      }
+    setTimeout(() => scanLock = false, 800);
+  }
 
-      if (!confirm("安田倉庫へ納品連絡メールを作成しますか？")) return;
+  function stopScan() {
+    if (!scanner) return;
+    scanner.stop().then(() => {
+      scanner.clear();
+      scanner = null;
+      document.getElementById("scanner-overlay").style.display = "none";
+    });
+  }
 
-      let listText = results.map((r, i) => (i + 1) + ". " + r).join("\n");
+  function renderList() {
+    const list = document.getElementById("list");
+    list.innerHTML = "";
+    results.forEach((r, i) => {
+      list.innerHTML += `
+        <div class="item">
+          <span>${i + 1}. ${r}</span>
+          <button class="delete" onclick="removeItem(${i})">削除</button>
+        </div>`;
+    });
+  }
 
-      let body =
+  function removeItem(i) {
+    results.splice(i, 1);
+    renderList();
+  }
+
+  function sendMail() {
+    if (!results.length) return alert("製番がありません");
+
+    const body =
 `お疲れ様です
 下記製番を安田倉庫へ納品しました。
 
-${listText}
+${results.map((r,i)=>`${i+1}. ${r}`).join("\n")}
 
 以上、宜しくお願いいたします。`;
 
-      let url =
-        "mailto:ki-hirata@toyodensei.co.jp" +
-        "?cc=" + encodeURIComponent("ki-hirata@toyodensei.co.jp") +
-        "&subject=" + encodeURIComponent("安田倉庫納品連絡") +
-        "&body=" + encodeURIComponent(body);
+    location.href =
+      "mailto:ki-hirata@toyodensei.co.jp"
+      + "?subject=" + encodeURIComponent("安田倉庫納品連絡")
+      + "&body=" + encodeURIComponent(body);
+  }
 
-      location.href = url;
-    }
-  </script>
+  function playBeep() {
+    const ctx = new (AudioContext || webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    osc.frequency.value = 1000;
+    osc.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.15);
+  }
+
+  function highlightQr() {
+    const box = document.getElementById("qr-highlight");
+    box.classList.add("active");
+    setTimeout(() => box.classList.remove("active"), 500);
+  }
+</script>
 </body>
 </html>
+``
