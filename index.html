@@ -135,10 +135,11 @@
       height: 100%;
     }
 
+    /* ★枠太く */
     #qr-highlight {
       position: absolute;
       inset: 6px;
-      border: 4px solid white;
+      border: 8px solid white;
       box-sizing: border-box;
       pointer-events: none;
     }
@@ -251,7 +252,7 @@
     results.forEach((r, i) => {
       list.innerHTML += `
         <div class="item">
-          <span>${i + 1}. ${r}</span>
+          <span>${r}</span>
           <button class="delete" onclick="removeItem(${i})">削除</button>
         </div>
       `;
@@ -273,7 +274,7 @@
 `お疲れ様です
 下記の製番を安田倉庫へ納品しました。
 
-${results.map((r,i)=>`${i+1}. ${r}`).join("\n")}
+${results.join("\n")}
 
 以上、宜しくお願いいたします。`;
 
@@ -315,4 +316,4 @@ ${results.map((r,i)=>`${i+1}. ${r}`).join("\n")}
 </script>
 </body>
 </html>
-```
+
