@@ -8,11 +8,11 @@
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
-  /* 全体の高さを画面にフィットさせ、はみ出しを防ぐ */
+  /* お手本のbodyスタイルを継承 */
   html, body {
     height: 100%;
     margin: 0;
-    overflow: hidden;
+    overflow: hidden; /* 画面全体のスクロールを禁止 */
   }
 
   body {
@@ -20,11 +20,11 @@
     padding: 16px;
     background: #f0f2f5;
     display: flex;
-    flex-direction: column;
+    justify-content: center;
     box-sizing: border-box;
   }
 
-  /* カードも画面の高さに合わせて伸縮するように設定 */
+  /* お手本のカードスタイル */
   .card {
     background: white;
     border-radius: 18px;
@@ -32,19 +32,18 @@
     box-shadow: 0 6px 16px rgba(0,0,0,0.1);
     display: flex;
     flex-direction: column;
-    max-height: 100%; /* 画面からはみ出さない */
+    width: 100%;
+    max-width: 400px;
+    height: auto;
+    max-height: 95vh; /* 画面内に収める */
     box-sizing: border-box;
   }
 
-  /* ヘッダーとボタン部分は固定 */
-  .fixed-header {
-    flex-shrink: 0;
-  }
-
+  /* お手本の見出しスタイル */
   h2 {
     text-align: center;
     font-size: 26px;
-    margin-bottom: 4px;
+    margin-bottom: 8px;
     margin-top: 0;
   }
 
@@ -55,13 +54,14 @@
     margin-bottom: 20px;
   }
 
+  /* お手本のボタンスタイルを完全再現 */
   button {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
     width: 100%;
-    padding: 18px;
+    padding: 18px; /* お手本通り */
     margin: 10px 0;
     font-size: 18px;
     border: none;
@@ -70,6 +70,7 @@
     transition: all 0.15s ease;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     cursor: pointer;
+    font-weight: bold; /* 画像に合わせ太字に */
   }
 
   button img {
@@ -88,14 +89,13 @@
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
   }
 
-  /* --- ここが重要：リスト部分だけをスクロールさせる --- */
+  /* リスト部分の調整（お手本のトーンに合わせる） */
   .list {
     margin-top: 10px;
-    text-align: left;
-    overflow-y: auto; /* 縦方向にスクロール */
-    flex-grow: 1;    /* 余ったスペースをすべてリストが使う */
-    padding-right: 4px; /* スクロールバーとの重なり防止 */
-    -webkit-overflow-scrolling: touch; /* iOSのスクロールを滑らかに */
+    overflow-y: auto;
+    flex-grow: 1;
+    padding-right: 2px;
+    -webkit-overflow-scrolling: touch;
   }
 
   .item {
@@ -106,32 +106,25 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 10px;
     border: 1px solid #eee;
   }
 
   .item span {
-    flex: 1;
-    word-break: break-all;
     font-size: 16px;
     font-weight: bold;
+    color: #333;
   }
 
   .delete {
-    background: #d9534f;
-    color: white;
-    border: none;
-    padding: 10px 0;
-    border-radius: 8px;
-    width: 25%;
-    flex-shrink: 0;
-    font-size: 14px;
-    box-shadow: none;
+    background: #666; /* 削除は少し控えめなグレーに */
+    padding: 8px 12px;
+    font-size: 13px;
+    width: auto;
     margin: 0;
-    height: auto;
+    box-shadow: none;
   }
 
-  /* カメラ用モーダル（前回のまま） */
+  /* カメラモーダル */
   #scanner-overlay {
     display: none;
     position: fixed;
@@ -139,7 +132,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.85);
     z-index: 1000;
     flex-direction: column;
     justify-content: center;
@@ -148,18 +141,15 @@
 
   #reader {
     width: 90%;
-    max-width: 400px;
+    max-width: 350px;
     background: white;
-    border-radius: 12px;
+    border-radius: 18px;
     overflow: hidden;
   }
 
   .cancel-area {
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    padding: 20px;
-    box-sizing: border-box;
+    width: 80%;
+    margin-top: 20px;
   }
 </style>
 </head>
@@ -167,7 +157,6 @@
 <body>
 
 <div class="card">
-  <!-- 固定ヘッダー部分 -->
   <div class="fixed-header">
     <h2>安田倉庫納品連絡</h2>
     <div class="sub">製番QRを読み取りメール送信してください(複数可)</div>
@@ -185,14 +174,13 @@
     </button>
   </div>
 
-  <!-- スクロールするリスト部分 -->
   <div class="list" id="list"></div>
 </div>
 
 <div id="scanner-overlay">
   <div id="reader"></div>
   <div class="cancel-area">
-    <button class="red" onclick="stopScan()">CANCEL / 閉じる</button>
+    <button class="red" onclick="stopScan()">閉じる</button>
   </div>
 </div>
 
@@ -249,12 +237,10 @@ function renderList() {
     `;
     list.appendChild(div);
   });
-  // 新しいアイテムが追加されたら一番下まで自動スクロール
   list.scrollTop = list.scrollHeight;
 }
 
 function deleteItem(index) {
-  if (!confirm("削除しますか？")) return;
   results.splice(index, 1);
   renderList();
 }
@@ -279,7 +265,6 @@ function sendMail() {
     "&body=" + encodeURIComponent(body);
 
   location.href = url;
-  setTimeout(() => { location.reload(); }, 500);
 }
 </script>
 
