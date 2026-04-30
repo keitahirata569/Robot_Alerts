@@ -1,6 +1,6 @@
 {
-  "name": "ロボット安田倉庫出荷連絡",
-  "short_name": "安田倉庫出荷連絡",
+  "name": "安田倉庫納品連絡",
+  "short_name": "安田倉庫納品連絡",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f0f2f5",
