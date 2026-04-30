@@ -8,14 +8,13 @@
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
-  /* 全体の背景をグレーに変更 */
   body {
     font-family: sans-serif;
     padding: 16px;
     background: #f0f2f5;
+    margin: 0;
   }
 
-  /* 入荷連絡ページと共通のカードデザイン */
   .card {
     background: white;
     border-radius: 18px;
@@ -26,7 +25,7 @@
   h2 {
     text-align: center;
     font-size: 26px;
-    margin-bottom: 4px;
+    margin-bottom: 8px;
   }
 
   .sub {
@@ -36,13 +35,11 @@
     margin-bottom: 20px;
   }
 
-  /* ボタンの基本スタイルを統一 */
   button {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
-
     width: 100%;
     padding: 18px;
     margin: 10px 0;
@@ -50,40 +47,73 @@
     border: none;
     border-radius: 12px;
     color: white;
-
     transition: all 0.15s ease;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     cursor: pointer;
   }
 
-  /* 押した時の動き */
-  button:active {
-    transform: translateY(2px);
-    filter: brightness(0.9);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  button img {
+    width: 24px;
+    height: 24px;
+    filter: brightness(0) invert(1);
   }
 
   .blue { background: #0078d4; }
   .orange { background: #f39c12; }
   .red { background: #d9534f; }
 
-  /* カメラ表示エリア */
-  #reader {
+  button:active {
+    transform: translateY(2px);
+    filter: brightness(0.9);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+
+  /* --- スキャン用ポップアップ（モーダル） --- */
+  #scanner-overlay {
+    display: none; /* 初期状態は非表示 */
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
-    max-width: 300px;
-    margin: 10px auto;
-    border-radius: 8px;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8); /* 背景をうす暗く */
+    z-index: 1000;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
+  #reader {
+    width: 90%;
+    max-width: 400px;
+    background: white;
+    border-radius: 12px;
     overflow: hidden;
   }
 
-  /* 読み取りリストのスタイル */
+  /* 下部固定のキャンセルボタン */
+  .cancel-area {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+
+  .cancel-btn {
+    background: #555;
+    margin: 0;
+    font-weight: bold;
+  }
+
+  /* リスト表示 */
   .list {
     margin-top: 20px;
     text-align: left;
   }
 
   .item {
-    background: #f8f9fa; /* カード内なので少し色を変える */
+    background: #f8f9fa;
     padding: 14px;
     border-radius: 10px;
     margin-bottom: 10px;
@@ -101,7 +131,6 @@
     font-weight: bold;
   }
 
-  /* 削除ボタンを横幅1/4（25%）にして右側に固定 */
   .delete {
     background: #d9534f;
     color: white;
@@ -111,7 +140,7 @@
     width: 25%;
     flex-shrink: 0;
     font-size: 14px;
-    box-shadow: none; /* リスト内ボタンは影なし */
+    box-shadow: none;
     margin: 0;
   }
 </style>
@@ -123,13 +152,27 @@
   <h2>製番読み取り</h2>
   <div class="sub">製番QRを読み取り(複数可)メール送信してください</div>
 
-  <button class="blue" onclick="startScan()">📷 製番を読み取る</button>
-  <button class="red" onclick="sendMail()">📧 メール送信</button>
-  <button class="orange" onclick="location.reload()">🔄 リセット</button>
+  <button class="blue" onclick="startScan()">
+    <img src="camera.png"> 製番を読み取る
+  </button>
 
-  <div id="reader"></div>
+  <button class="red" onclick="sendMail()">
+    <img src="mail.png"> メール送信
+  </button>
+
+  <button class="orange" onclick="location.reload()">
+    <img src="refresh.png"> リセット
+  </button>
 
   <div class="list" id="list"></div>
+</div>
+
+<!-- カメラポップアップ構造 -->
+<div id="scanner-overlay">
+  <div id="reader"></div>
+  <div class="cancel-area">
+    <button class="cancel-btn" onclick="stopScan()">CANCEL / 閉じる</button>
+  </div>
 </div>
 
 <script>
@@ -137,26 +180,45 @@ let scanner = null;
 let results = [];
 
 function startScan() {
+  const overlay = document.getElementById("scanner-overlay");
+  overlay.style.display = "flex"; // ポップアップを表示
+
   if (scanner) return;
   scanner = new Html5Qrcode("reader");
+
   scanner.start(
     { facingMode: "environment" },
-    { fps: 10, qrbox: 250 },
+    { fps: 10, qrbox: { width: 250, height: 250 } },
     (decodedText) => {
-      scanner.stop().then(() => {
-        scanner.clear();
-        scanner = null;
-      });
+      // 成功時
       if (!results.includes(decodedText)) {
         results.push(decodedText);
         renderList();
       }
       if (navigator.vibrate) navigator.vibrate(100);
+      stopScan(); // 読み取ったら自動で閉じる
     }
   ).catch(err => {
     alert("カメラ起動失敗: " + err);
-    scanner = null;
+    stopScan();
   });
+}
+
+// スキャン停止とポップアップ非表示
+function stopScan() {
+  const overlay = document.getElementById("scanner-overlay");
+  if (scanner) {
+    scanner.stop().then(() => {
+      scanner.clear();
+      scanner = null;
+      overlay.style.display = "none";
+    }).catch(() => {
+      scanner = null;
+      overlay.style.display = "none";
+    });
+  } else {
+    overlay.style.display = "none";
+  }
 }
 
 function renderList() {
