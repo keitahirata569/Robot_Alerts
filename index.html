@@ -8,93 +8,129 @@
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
-body {
-  font-family: sans-serif;
-  text-align: center;
-  padding: 16px;
-  background: #f0f2f5;
-}
+  /* 全体の背景をグレーに変更 */
+  body {
+    font-family: sans-serif;
+    padding: 16px;
+    background: #f0f2f5;
+  }
 
-h2 {
-  margin-bottom: 4px; /* 説明書きとの間隔を調整 */
-}
+  /* 入荷連絡ページと共通のカードデザイン */
+  .card {
+    background: white;
+    border-radius: 18px;
+    padding: 20px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+  }
 
-/* 説明書きのスタイル */
-.description {
-  font-size: 13px;
-  color: #666;
-  margin-bottom: 16px;
-}
+  h2 {
+    text-align: center;
+    font-size: 26px;
+    margin-bottom: 4px;
+  }
 
-button {
-  width: 100%;
-  padding: 16px;
-  margin: 8px 0;
-  font-size: 18px;
-  border: none;
-  border-radius: 12px;
-  color: white;
-  cursor: pointer;
-}
+  .sub {
+    text-align: center;
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 20px;
+  }
 
-.blue { background: #0078d4; }
-.orange { background: #f39c12; }
-.red { background: #d9534f; }
+  /* ボタンの基本スタイルを統一 */
+  button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
 
-#reader {
-  width: 300px;
-  margin: 10px auto;
-}
+    width: 100%;
+    padding: 18px;
+    margin: 10px 0;
+    font-size: 18px;
+    border: none;
+    border-radius: 12px;
+    color: white;
 
-.list {
-  margin-top: 20px;
-  text-align: left;
-}
+    transition: all 0.15s ease;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    cursor: pointer;
+  }
 
-.item {
-  background: white;
-  padding: 12px;
-  border-radius: 10px;
-  margin-bottom: 8px;
+  /* 押した時の動き */
+  button:active {
+    transform: translateY(2px);
+    filter: brightness(0.9);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
 
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px; /* テキストとボタンの間に隙間を作る */
-}
+  .blue { background: #0078d4; }
+  .orange { background: #f39c12; }
+  .red { background: #d9534f; }
 
-/* 読み取ったテキスト側の設定 */
-.item span {
-  flex: 1; /* 残りの幅をすべて使う */
-  word-break: break-all; /* 長い英数字でも改行させる */
-}
+  /* カメラ表示エリア */
+  #reader {
+    width: 100%;
+    max-width: 300px;
+    margin: 10px auto;
+    border-radius: 8px;
+    overflow: hidden;
+  }
 
-/* 削除ボタンを横幅1/4（25%）にして右側に固定 */
-.delete {
-  background: #d9534f;
-  color: white;
-  border: none;
-  padding: 10px 0;
-  border-radius: 6px;
-  width: 25%;
-  flex-shrink: 0; /* ボタンが潰れないように固定 */
-  font-size: 14px;
-}
+  /* 読み取りリストのスタイル */
+  .list {
+    margin-top: 20px;
+    text-align: left;
+  }
+
+  .item {
+    background: #f8f9fa; /* カード内なので少し色を変える */
+    padding: 14px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid #eee;
+  }
+
+  .item span {
+    flex: 1;
+    word-break: break-all;
+    font-size: 16px;
+    font-weight: bold;
+  }
+
+  /* 削除ボタンを横幅1/4（25%）にして右側に固定 */
+  .delete {
+    background: #d9534f;
+    color: white;
+    border: none;
+    padding: 10px 0;
+    border-radius: 8px;
+    width: 25%;
+    flex-shrink: 0;
+    font-size: 14px;
+    box-shadow: none; /* リスト内ボタンは影なし */
+    margin: 0;
+  }
 </style>
 </head>
 
 <body>
 
-<h2>製番読み取り</h2>
-<p class="description">製番QRを読み取り(複数可)メール送信してください</p>
+<div class="card">
+  <h2>製番読み取り</h2>
+  <div class="sub">製番QRを読み取り(複数可)メール送信してください</div>
 
-<button class="blue" onclick="startScan()">📷 製番を読み取る</button>
-<button class="red" onclick="sendMail()">📧 メール送信</button>
-<button class="orange" onclick="location.reload()">🔄 リセット</button>
+  <button class="blue" onclick="startScan()">📷 製番を読み取る</button>
+  <button class="red" onclick="sendMail()">📧 メール送信</button>
+  <button class="orange" onclick="location.reload()">🔄 リセット</button>
 
-<div id="reader"></div>
+  <div id="reader"></div>
 
-<div class="list" id="list"></div>
+  <div class="list" id="list"></div>
+</div>
 
 <script>
 let scanner = null;
@@ -102,9 +138,7 @@ let results = [];
 
 function startScan() {
   if (scanner) return;
-
   scanner = new Html5Qrcode("reader");
-
   scanner.start(
     { facingMode: "environment" },
     { fps: 10, qrbox: 250 },
@@ -113,12 +147,10 @@ function startScan() {
         scanner.clear();
         scanner = null;
       });
-
       if (!results.includes(decodedText)) {
         results.push(decodedText);
         renderList();
       }
-
       if (navigator.vibrate) navigator.vibrate(100);
     }
   ).catch(err => {
@@ -130,16 +162,13 @@ function startScan() {
 function renderList() {
   const list = document.getElementById("list");
   list.innerHTML = "";
-
   results.forEach((text, index) => {
     const div = document.createElement("div");
     div.className = "item";
-
     div.innerHTML = `
       <span>${index + 1}. ${text}</span>
       <button class="delete" onclick="deleteItem(${index})">削除</button>
     `;
-
     list.appendChild(div);
   });
 }
@@ -155,34 +184,22 @@ function sendMail() {
     alert("製番がありません");
     return;
   }
-
   if (!confirm("メールを作成しますか？")) return;
 
   let listText = results.map((r, i) => (i + 1) + ". " + r).join("\n");
-
-  let body =
-`お疲れ様です
-下記製番を安田倉庫へ納品しました。
-
-${listText}
-
-以上、宜しくお願いいたします。
-※本メールアドレスに返信いただいても対応できませんので、ご了承ください。`;
-
+  let body = `お疲れ様です\n下記製番を安田倉庫へ納品しました。\n\n${listText}\n\n以上、宜しくお願いいたします。\n※本メールアドレスに返信いただいても対応できませんので、ご了承ください。`;
+  
   let to = "ki-hirata@toyodensei.co.jp";
   let cc = "ki-hirata@toyodensei.co.jp";
   let subject = "安田倉庫納品連絡";
 
   let url = "mailto:" + to +
     "?cc=" + encodeURIComponent(cc) +
-    "?subject=" + encodeURIComponent(subject) +
+    "&subject=" + encodeURIComponent(subject) +
     "&body=" + encodeURIComponent(body);
 
   location.href = url;
-
-  setTimeout(() => {
-    location.reload();
-  }, 500);
+  setTimeout(() => { location.reload(); }, 500);
 }
 </script>
 
