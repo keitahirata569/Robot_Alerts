@@ -22,8 +22,6 @@
     body {
       padding: 16px;
       box-sizing: border-box;
-
-      /* ★PCでも中央固定 */
       display: flex;
       justify-content: center;
       align-items: flex-start;
@@ -36,8 +34,6 @@
       box-shadow: 0 6px 16px rgba(0,0,0,0.1);
       display: flex;
       flex-direction: column;
-
-      /* ★横に伸びない */
       width: 100%;
       max-width: 480px;
     }
@@ -167,6 +163,7 @@
       border-color: #ff3b30;
     }
 
+    .torch-area,
     .cancel-area {
       width: 80%;
       max-width: 480px;
@@ -180,8 +177,10 @@
 <body>
   <div class="card">
     <h2>納品連絡</h2>
+
     <div class="sub">
-      製番QRを読み取り、メール送信してください<br>（複数可）
+      製番QRを読み取り、メール送信してください<br>
+      （複数可）
     </div>
 
     <button class="blue" onclick="startScan()">
@@ -202,95 +201,206 @@
   </div>
 
   <div id="scanner-overlay">
+
     <div id="reader-container">
       <div id="reader"></div>
       <div id="qr-highlight"></div>
     </div>
 
-    <div class="cancel-area">
-      <button class="red" onclick="stopScan()">閉じる</button>
+    <div class="torch-area">
+      <button class="orange" onclick="toggleTorch()">
+        💡 LED ON/OFF
+      </button>
     </div>
+
+    <div class="cancel-area">
+      <button class="red" onclick="stopScan()">
+        閉じる
+      </button>
+    </div>
+
   </div>
 
 <script>
+
   let scanner = null;
   let results = [];
   let lock = false;
 
+  let videoTrack = null;
+  let torchOn = false;
+
   function startScan() {
+
     document.getElementById("scanner-overlay").style.display = "flex";
+
     if (scanner) return;
 
     scanner = new Html5Qrcode("reader");
+
     scanner.start(
-      { facingMode: "environment" },
-      { fps: 10, qrbox: 320 },
+      {
+        facingMode: "environment"
+      },
+      {
+        fps: 10,
+        qrbox: 320
+      },
       onScanSuccess
-    );
+    ).then(() => {
+
+      const video = document.querySelector("#reader video");
+
+      if (video && video.srcObject) {
+        videoTrack = video.srcObject.getVideoTracks()[0];
+      }
+
+    }).catch(err => {
+      console.error(err);
+      alert("カメラ起動に失敗しました");
+    });
+
+  }
+
+  async function toggleTorch() {
+
+    try {
+
+      if (!videoTrack) {
+        alert("カメラ起動後にLEDを操作してください");
+        return;
+      }
+
+      const capabilities = videoTrack.getCapabilities();
+
+      if (!capabilities.torch) {
+        alert("この端末・ブラウザはLED非対応です");
+        return;
+      }
+
+      torchOn = !torchOn;
+
+      await videoTrack.applyConstraints({
+        advanced: [
+          {
+            torch: torchOn
+          }
+        ]
+      });
+
+    } catch (e) {
+
+      console.error(e);
+      alert("LED操作に失敗しました");
+
+    }
+
   }
 
   function onScanSuccess(text) {
+
     if (lock) return;
+
     lock = true;
 
     if (!results.includes(text)) {
+
       results.push(text);
+
       renderList();
+
       playBeep(1);
+
       highlightQr("yellow");
 
-      if (navigator.vibrate) navigator.vibrate(100);
+      if (navigator.vibrate) {
+        navigator.vibrate(100);
+      }
 
     } else {
+
       playBeep(2);
+
       highlightQr("red");
 
-      if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+      if (navigator.vibrate) {
+        navigator.vibrate([100, 50, 100]);
+      }
+
     }
 
-    setTimeout(() => lock = false, 800);
+    setTimeout(() => {
+      lock = false;
+    }, 800);
+
   }
 
   function stopScan() {
+
+    torchOn = false;
+    videoTrack = null;
+
     if (!scanner) {
+
       document.getElementById("scanner-overlay").style.display = "none";
+
       return;
+
     }
 
     scanner.stop().then(() => {
+
       scanner.clear();
+
       scanner = null;
+
       document.getElementById("scanner-overlay").style.display = "none";
+
     });
+
   }
 
   function renderList() {
+
     const list = document.getElementById("list");
+
     const count = document.getElementById("list-count");
 
     list.innerHTML = "";
 
     results.forEach((r, i) => {
+
       list.innerHTML += `
         <div class="item">
           <span>${r}</span>
-          <button class="delete" onclick="removeItem(${i})">削除</button>
+          <button class="delete" onclick="removeItem(${i})">
+            削除
+          </button>
         </div>
       `;
+
     });
 
     count.textContent = `件数：${results.length}`;
+
   }
 
   function removeItem(i) {
+
     results.splice(i, 1);
+
     renderList();
+
   }
 
   function sendMail() {
+
     if (!results.length) {
+
       alert("製番がありません");
+
       return;
+
     }
 
     const body =
@@ -305,37 +415,55 @@ ${results.join("\n")}
       "mailto:ki-hirata@toyodensei.co.jp" +
       "?subject=" + encodeURIComponent("安田倉庫納品連絡") +
       "&body=" + encodeURIComponent(body);
+
   }
 
   function playBeep(count = 1) {
+
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
 
     for (let i = 0; i < count; i++) {
+
       const osc = ctx.createOscillator();
+
       osc.frequency.value = 1000;
+
       osc.connect(ctx.destination);
 
       const start = ctx.currentTime + i * 0.2;
+
       osc.start(start);
+
       osc.stop(start + 0.1);
+
     }
+
   }
 
   function highlightQr(color) {
+
     const box = document.getElementById("qr-highlight");
 
     box.classList.remove("yellow", "red");
 
     if (color === "red") {
+
       box.classList.add("red");
+
     } else {
+
       box.classList.add("yellow");
+
     }
 
     setTimeout(() => {
+
       box.classList.remove("yellow", "red");
+
     }, 500);
+
   }
+
 </script>
 </body>
 </html>
